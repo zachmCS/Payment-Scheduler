@@ -9,11 +9,17 @@ def main():
 
 
     payments = st.sidebar.selectbox("Select the payment schedule", ["Weekly", "Bi-Weekly", "Monthly", "Bi-Monthly", "Quarterly", "Semi-Annually", "Annually"])
+    ##desired action is to send response to protocols.py file and have it configure the correct frequency internally
     holiday_select = st.sidebar.selectbox("Select the holiday calendar", ["New York Stock Exchange", "European Central Bank"])
+    ##desired action is to send response to protocols.py file and have it pull up the correct holiday calendar internally
     rules = st.sidebar.selectbox("Select the payment rule", ["Following Business Day", "Preceding Business Day", "Modified Following Business Day", "Modified Preceding Business Day"])
+    ##desired action is to send response to protocols.py file and have it configure the correct payment rule internally
     end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=False)
+    ##desired action is to send response to protocols.py file and have it configure the correct end of month rule internally
     start_date = st.date_input("Start Date")
+    ##desired action is to send response to protocols.py file and have it configure the correct start date internally
     end_date = st.date_input("End Date", min_value=start_date, value=start_date)
+    ##desired action is to send response to protocols.py file and have it configure the correct end date internally
 
     # Computer the number of payments and dates of payments based on the payment schedule
     if payments == "Weekly":
