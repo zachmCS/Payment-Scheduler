@@ -14,8 +14,9 @@ def main():
     ##desired action is to send response to protocols.py file and have it pull up the correct holiday calendar internally
     rules = st.sidebar.selectbox("Select the payment rule", ["Following Business Day", "Preceding Business Day", "Modified Following Business Day", "Modified Preceding Business Day"])
     ##desired action is to send response to protocols.py file and have it configure the correct payment rule internally
-    end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=False)
-    ##desired action is to send response to protocols.py file and have it configure the correct end of month rule internally
+    if(payments == "Monthly" or payments == "Bi-Monthly"):
+        end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=True)
+        ##desired action is to send response to protocols.py file and have it configure the correct end of month rule internally
     start_date = st.date_input("Start Date")
     ##desired action is to send response to protocols.py file and have it configure the correct start date internally
     end_date = st.date_input("End Date", min_value=start_date, value=start_date)
@@ -30,7 +31,7 @@ def main():
         payment_dates = [start_date + pd.DateOffset(weeks=i*2) for i in range(num_payments)]
     elif payments == "Monthly":
         num_payments = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
-        payment_dates = [start_date + pd.DateOffset(months=i) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(months=i+1) for i in range(num_payments)]
     elif payments == "Bi-Monthly":
         num_payments = (end_date.year - start_date.year) * 6 + (end_date.month - start_date.month) // 2
         payment_dates = [start_date + pd.DateOffset(months=i*2) for i in range(num_payments)]
