@@ -22,28 +22,28 @@ def main():
     end_date = st.date_input("End Date", min_value=start_date, value=start_date)
     ##desired action is to send response to protocols.py file and have it configure the correct end date internally
 
-    # Computer the number of payments and dates of payments based on the payment schedule
+    # SEND TO PROTOCOL FOR COMPUTATION
     if payments == "Weekly":
         num_payments = (end_date - start_date).days // 7
-        payment_dates = [start_date + pd.DateOffset(weeks=i) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(weeks=(i+1)) for i in range(num_payments)]
     elif payments == "Bi-Weekly":
         num_payments = (end_date - start_date).days // 14
-        payment_dates = [start_date + pd.DateOffset(weeks=i*2) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(weeks=(i+1)*2) for i in range(num_payments)]
     elif payments == "Monthly":
         num_payments = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
         payment_dates = [start_date + pd.DateOffset(months=i+1) for i in range(num_payments)]
     elif payments == "Bi-Monthly":
         num_payments = (end_date.year - start_date.year) * 6 + (end_date.month - start_date.month) // 2
-        payment_dates = [start_date + pd.DateOffset(months=i*2) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(months=(i+1)*2) for i in range(num_payments)]
     elif payments == "Quarterly":
         num_payments = (end_date.year - start_date.year) * 4 + (end_date.month - start_date.month) // 3
-        payment_dates = [start_date + pd.DateOffset(months=i*3) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(months=(i+1)*3) for i in range(num_payments)]
     elif payments == "Semi-Annually":
         num_payments = (end_date.year - start_date.year) * 2 + (end_date.month - start_date.month) // 6
-        payment_dates = [start_date + pd.DateOffset(months=i*6) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(months=(i+1)*6) for i in range(num_payments)]
     elif payments == "Annually":
         num_payments = end_date.year - start_date.year
-        payment_dates = [start_date + pd.DateOffset(years=i) for i in range(num_payments)]
+        payment_dates = [start_date + pd.DateOffset(years=(i+1)) for i in range(num_payments)]
 
     # convert payment_dates to dataframe with month, day, and year columns
     payment_dates = pd.DataFrame({"Month": [date.strftime('%B') for date in payment_dates],
