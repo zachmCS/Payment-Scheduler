@@ -1,14 +1,17 @@
 import streamlit as st
-from st_aggrid import AgGrid
 import pandas as pd
+from st_aggrid import AgGrid
 
 def main():
     st.sidebar.image("./images/msci.png")
     st.sidebar.image("./images/gcoeou.png")
-    st.title("Liquid Thunders Payment Scheduler")
+    st.title("Liquid Thunder's Payment Scheduler")
 
 
     payments = st.sidebar.selectbox("Select the payment schedule", ["Weekly", "Bi-Weekly", "Monthly", "Bi-Monthly", "Quarterly", "Semi-Annually", "Annually"])
+    holiday_select = st.sidebar.selectbox("Select the holiday calendar", ["New York Stock Exchange", "European Central Bank"])
+    rules = st.sidebar.selectbox("Select the payment rule", ["Following Business Day", "Preceding Business Day", "Modified Following Business Day", "Modified Preceding Business Day"])
+    end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=False)
     start_date = st.date_input("Start Date")
     end_date = st.date_input("End Date", min_value=start_date, value=start_date)
 
