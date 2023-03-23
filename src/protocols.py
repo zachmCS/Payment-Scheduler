@@ -1,5 +1,4 @@
 import datetime
-import selftime
 from typing import Dict, Iterable, Optional, Protocol, Tuple, Union, runtime_checkable
 import holidays
 from jdcal import gcal2jd, is_leap
@@ -39,7 +38,6 @@ class Date(Protocol):
 
     def is_bus_day(self, calendar_input: "Calendar") -> bool:
         # what to do with calendar?
-
         if self.day in holidays.WEEKEND or self.day in us_holidays:
             return false
         else:
@@ -137,9 +135,10 @@ class Frequency(Protocol):
 
     @property
     def year_fraction(self) -> float:
-        start = selftime.self(get_year(self), 1, 1).toordinal()
-        year_length = selftime.self(get_year(self) + 1, 1, 1).toordinal() - start
-        return get_year(self) + float(self.toordinal() - start) / year_length
+        boy = datetime.datetime(get_year(self), 1, 1)
+        eoy = datetime.datetime(get_year(self) + 1, 1, 1)
+        return year + ((datetime.datetime(get_year(self), get_month(self),
+                                          get_day(self)) - boy).total_seconds() / ((eoy - boy).total_seconds()))
 
     def __str__(self) -> str:
         pass
@@ -250,7 +249,9 @@ class Term(Protocol):
     def __init__(
             self, quantity: int, unit: Union[TermUnit, str], lenient: bool = False
     ) -> None:
-        pass
+        self.quantity = quantity
+        self.unit = unit
+        self.lenient = lenient
 
     @classmethod
     def from_str(cls, string: str, lenient: bool = False) -> "Term":
