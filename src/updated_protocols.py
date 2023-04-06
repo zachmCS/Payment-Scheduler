@@ -47,7 +47,7 @@ class Date(Protocol):
     # checks if is the given day is a business day
     def is_bus_day(self, calendar_input: "Calendar") -> bool:
         # need to get bank type from scheduler
-        if not calendar_input.is_holiday(self) and not calendar_input.is_holiday(self):
+        if not calendar_input.is_holiday(self) and not calendar_input.is_weekend(self):
             return True
         return False
 
