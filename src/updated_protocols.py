@@ -267,9 +267,7 @@ class Calendar(Protocol):
             ignore_weekend: bool,
             ignore_holidays: bool,
     ) -> "Term":
-
-        new_cal_day = Calendar(holidays.WEEKEND, business_day_rule.country_chosen)
-        new_term = Term()
+       pass
 
     def business_days_between(
             self,
@@ -313,6 +311,7 @@ class Term(Protocol):
         self.unit = unit
         self.lenient = lenient
 
+    # TODO what is this?
     @classmethod
     def from_str(cls, string: str, lenient: bool = False) -> "Term":
         pass
