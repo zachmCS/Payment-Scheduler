@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid
 
+import updated_protocols
 from updated_protocols import *
 
 
@@ -30,8 +31,6 @@ def holiday_selection(selected: str) -> Dict:
     return holiday
 
 def payment_calc(payment_dates, bus_protocol: BusinessDayRule, currDate, hday) -> None:
-
-    while currDate in hday or currDate in holidays.WEEKEND:
         if bus_protocol.rules == "Following Business Day":
             currDate = bus_protocol.next_bus_day(turn_to_date_class(currDate))
         elif bus_protocol.rules == "Preceding Business Day":
@@ -57,7 +56,7 @@ def main():
                                      "Annually"])
     ##desired action is to send response to protocols.py file and have it configure the correct frequency internally
     holiday_select = st.sidebar.selectbox("Select the holiday calendar",
-                                          ["New York Stock Exchange", "European Central Bank"])
+                                          ["New York Stock Exchange", "European Central Bank", "China", "Brazil","Australia","Nigeria"])
     hday = holiday_selection(holiday_select)
 
     ##desired action is to send response to protocols.py file and have it pull up the correct holiday calendar internally
@@ -78,16 +77,11 @@ def main():
     ##desired action is to send response to protocols.py file and have it configure the correct end date internally
 
     start_date_class = turn_to_date_class(start_date)
-    end_date_class = turn_to_date_class(end_date)
-
-    day: datetime.date
-    hday_class: Dict
-    for day, idx in hday:
-        hday_class[idx] = turn_to_date_class(day)
+    end_date_class = turn_to_date_class(end_date)    
 
     bus_protocol: BusinessDayRule = updated_protocols.BusinessDayRule(start_date_class, end_date_class,
-                                                                      rules, hday_class, payments, end_of_month_rule)
-    cal: Calendar = updated_protocols.Calendar(holidays.WEEKEND, hday_class)
+                                                                      rules, hday, payments, end_of_month_rule)
+    cal: Calendar = updated_protocols.Calendar(holidays.WEEKEND, hday)
 
 
     # SEND TO PROTOCOL FOR COMPUTATION
