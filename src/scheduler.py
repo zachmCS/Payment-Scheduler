@@ -6,8 +6,8 @@ import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid
 
-import updated_protocols
-from updated_protocols import Calendar, BusinessDayRule
+from updated_protocols import *
+
 
 
 def turn_to_date_class(date_input) -> updated_protocols.Date:
