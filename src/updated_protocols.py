@@ -2,14 +2,14 @@ from copy import deepcopy
 import datetime
 from itertools import chain
 from enum import Enum
-from typing import Dict, Iterable, Protocol, Tuple, Union, runtime_checkable
+from typing import Dict, Iterable, Tuple, Union, runtime_checkable
 import holidays
 from jdcal import gcal2jd, is_leap
 
 
-@runtime_checkable
-class Date(Protocol):
-    """Protocol of Financial Date Class"""
+
+class Date():
+    """ of Financial Date Class"""
 
     def __init__(self, day: int, month: int, year: int) -> None:
         """
@@ -104,13 +104,13 @@ class Date(Protocol):
         return False
 
 
-class BusinessDayRule(Protocol):
-    """Protocol of Business Day Rule Representation"""
+class BusinessDayRule():
+    """ of Business Day Rule Representation"""
 
     # TODO: Add implement end of the month rule more directly into the code
 
     def __init__(self, start_date: Date, end_date: Date, rules: str,
-                 country_chosen: Dict, payments: str, end_of_the_month_rule: bool = False) -> None:
+                 country_chosen: holidays, payments: str, end_of_the_month_rule: bool = False) -> None:
         """
             Initializes a self with a start_date, end_date, rules for the business option
             selected, and the country chosen for the bank holidays
@@ -161,7 +161,7 @@ class BusinessDayRule(Protocol):
             if (given - datetime.timedelta(days=1)).month != given.month:
                 given += datetime.timedelta(days=1)
             else:
-                self.prev_bus_day_modded(given_date)
+               given -= datetime.timedelta(days=1)
         return given
 
     # after calculating what exact day a payment should fall on, this function will
@@ -173,13 +173,13 @@ class BusinessDayRule(Protocol):
             if (given - datetime.timedelta(days=1)).month == given.month:
                 given -= datetime.timedelta(days=1)
             else:
-                self.next_bus_day_modded(given_date)
+                given+= datetime.timedelta(days=1)
         return given
 
 
-@runtime_checkable
-class Frequency(Protocol):
-    """Protocol of Frequency Representation"""
+
+class Frequency():
+    """ of Frequency Representation"""
 
     name: str
     term: "Term"
@@ -197,8 +197,8 @@ class DayOfTheWeek(Enum):
     MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
 
 
-class Calendar(Protocol):
-    """Protocol of Financial Calendar class"""
+class Calendar():
+    """ of Financial Calendar class"""
 
     def __init__(
             self,
@@ -283,8 +283,8 @@ class Calendar(Protocol):
         return res
 
 
-class TermUnit(Protocol):
-    """Protocol of Term Unit Representation"""
+class TermUnit():
+    """ of Term Unit Representation"""
 
     name: str
     code: str
@@ -293,8 +293,8 @@ class TermUnit(Protocol):
         return f'(Name: {self.name}, Code: {self.code})'
 
 
-@runtime_checkable
-class Term(Protocol):
+
+class Term():
     """Financial Term Class"""
     quantity: int
     unit: TermUnit
