@@ -1,10 +1,11 @@
 import datetime
-from datetime import date
-from typing import Dict, Iterable, Optional, Protocol, Tuple, Union, runtime_checkable
-import streamlit as st
-import pandas as pd
-from st_aggrid import AgGrid
+from typing import Dict
+
 import holidays
+import pandas as pd
+import streamlit as st
+from st_aggrid import AgGrid
+
 import updated_protocols
 from updated_protocols import Calendar, BusinessDayRule
 
@@ -28,20 +29,20 @@ def holiday_selection(selected: str) -> Dict:
         holiday = holidays.NG()
     return holiday
 
-def payment_calc(payment_dates, bus_protocol, currDate) -> None:
-    while currDate in datetime.date(bus_protocol.country_chosen.year,
-                                    bus_protocol.country_chosen.month, bus_protocol.country_chosen.day) or currDate in holidays.WEEKEND:
-        if bus_protocol.bus_protocol.rules == "Following Business Day":
-            currDate = bus_protocol.next_bus_day(datetime.date(currDate.year, currDate.month, currDate.day))
+def payment_calc(payment_dates, bus_protocol: BusinessDayRule, currDate, hday) -> None:
+
+    while currDate in hday or currDate in holidays.WEEKEND:
+        if bus_protocol.rules == "Following Business Day":
+            currDate = bus_protocol.next_bus_day(turn_to_date_class(currDate))
         elif bus_protocol.rules == "Preceding Business Day":
-            currDate = bus_protocol.prev_bus_day(datetime.date(currDate.year, currDate.month, currDate.day))
+            currDate = bus_protocol.prev_bus_day(turn_to_date_class(currDate))
         elif bus_protocol.rules == "Modified Following Business Day":
             # we can't pass into the next month
             # if we do, revert to last business day of the previous month
-            currDate = bus_protocol.next_bus_day_modded(datetime.date(currDate.year, currDate.month, currDate.day))
+            currDate = bus_protocol.next_bus_day_modded(turn_to_date_class(currDate))
         elif bus_protocol.rules == "Modified Preceding Business Day":
             # we can't pass into the previous month. if we do, revert to first business day of the next month
-            currDate = bus_protocol.prev_bus_day_modded(datetime.date(currDate.year, currDate.month, currDate.day))
+            currDate = bus_protocol.prev_bus_day_modded(turn_to_date_class(currDate))
         payment_dates.append(currDate)
 
 
@@ -95,43 +96,43 @@ def main():
         num_payments = (end_date - start_date).days // 7
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(weeks=(i + 1))
-            payment_calc(payment_dates, bus_protocol, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     elif payments == "Bi-Weekly":
         num_payments = (end_date - start_date).days // 14
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(weeks=(i + 1) * 2)
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     elif payments == "Monthly":  ##END OF MONTH RULE NEEDS TO BE IMPLEMENTED
         num_payments = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(months=i + 1)
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     elif payments == "Bi-Monthly":  ##END OF MONTH RULE NEEDS TO BE IMPLEMENTED
         num_payments = (end_date.year - start_date.year) * 6 + (end_date.month - start_date.month) // 2
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(months=(i + 1) * 2)
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     elif payments == "Quarterly":
         num_payments = (end_date.year - start_date.year) * 4 + (end_date.month - start_date.month) // 3
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(months=(i + 1) * 3)
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     elif payments == "Semi-Annually":
         num_payments = (end_date.year - start_date.year) * 2 + (end_date.month - start_date.month) // 6
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(months=(i + 1) * 6)
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     elif payments == "Annually":
         num_payments = end_date.year - start_date.year
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(years=(i + 1))
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate, hday)
 
     # convert payment_dates to dataframe with month, day, and year columns
     payment_dates = pd.DataFrame({"Month": [date.strftime('%B') for date in payment_dates],
