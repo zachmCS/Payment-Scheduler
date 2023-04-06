@@ -131,7 +131,7 @@ class BusinessDayRule(Protocol):
         self.end_of_the_month_rule = rule_value
 
     # updates payment specification
-    def update_payment (self, new_payment: bool):
+    def update_payment (self, new_payment: str):
         self.payments = new_payment
 
 
