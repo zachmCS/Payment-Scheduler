@@ -155,7 +155,7 @@ class BusinessDayRule(Protocol):
     # either return that self if it is a business day, or the next business day if
     # it is a weekend or holiday stopping at the last day of the month
     # Note ask about circumfiting infinte loops (or going into the next month using Marcos method)
-    def next_bus_day_modded(self, given_date: Date) -> datetime:
+    def next_bus_day_modded(self, given_date: Date) -> datetime.date:
         given = given_date.as_date()
         while given.weekday() in holidays.WEEKEND or given in self.country_chosen:
             if (given - datetime.timedelta(days=1)).month != given.month:
@@ -167,7 +167,7 @@ class BusinessDayRule(Protocol):
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the previous business day
     # if it is a weekend or holiday stopping at the first day of the month
-    def prev_bus_day_modded(self, given_date: Date) -> datetime:
+    def prev_bus_day_modded(self, given_date: Date) -> datetime.date:
         given = given_date.as_date()
         while given.weekday() in holidays.WEEKEND or given in self.country_chosen:
             if (given - datetime.timedelta(days=1)).month == given.month:
