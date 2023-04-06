@@ -110,7 +110,7 @@ class BusinessDayRule(Protocol):
     # TODO: Add implement end of the month rule more directly into the code
 
     def __init__(self, start_date: Date, end_date: Date, rules: str,
-                 country_chosen: Dict, end_of_the_month_rule: bool = False) -> None:
+                 country_chosen: Dict, payments: str, end_of_the_month_rule: bool = False) -> None:
         """
             Initializes a self with a start_date, end_date, rules for the business option
             selected, and the country chosen for the bank holidays
@@ -122,12 +122,18 @@ class BusinessDayRule(Protocol):
         self.start_date = start_date
         self.end_date = end_date
         self.rules = rules
+        self.payments = payments
         self.country_chosen = country_chosen
         self.end_of_the_month_rule = end_of_the_month_rule
 
     # updates end of the month rule
     def update_month_rule(self, rule_value: bool):
         self.end_of_the_month_rule = rule_value
+
+    # updates payment specification
+    def update_payment (self, new_payment: bool):
+        self.payments = new_payment
+
 
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the next business day if it is a weekend or holiday
@@ -252,7 +258,7 @@ class Calendar(Protocol):
                 return True
         else:
             return True
-
+    # TODO
     def bus_to_cal_day(
             self,
             date_input: Date,
@@ -261,7 +267,9 @@ class Calendar(Protocol):
             ignore_weekend: bool,
             ignore_holidays: bool,
     ) -> "Term":
-        pass
+
+        new_cal_day = Calendar(holidays.WEEKEND, business_day_rule.country_chosen)
+        new_term = Term()
 
     def business_days_between(
             self,

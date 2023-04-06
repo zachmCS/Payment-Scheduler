@@ -28,30 +28,9 @@ def holiday_selection(selected: str) -> Dict:
         holiday = holidays.NG()
     return holiday
 
-
-def payment_calc(payment_dates, rules, start_date, hday, currDate) -> None:
-    while currDate in hday or currDate in holidays.WEEKEND:
-        if rules == "Following Business Day":
-            currDate = currDate + pd.DateOffset(days=1)
-        elif rules == "Preceding Business Day":
-            currDate = currDate - pd.DateOffset(days=1)
-        elif rules == "Modified Following Business Day":
-            ##we cant pass into the next month. if we do, revert to last business day of the previous month
-            if currDate.month != (currDate + pd.DateOffset(days=1)).month:
-                currDate = currDate - pd.DateOffset(days=1)
-            else:
-                currDate = currDate + pd.DateOffset(days=1)
-        elif rules == "Modified Preceding Business Day":
-            # we cant pass into the previous month. if we do, revert to first business day of the next month
-            if currDate.month != (currDate - pd.DateOffset(days=1)).month:
-                currDate = currDate + pd.DateOffset(days=1)
-            else:
-                currDate = currDate - pd.DateOffset(days=1)
-        payment_dates.append(currDate)
-
-
-def payment_calc_edited(payment_dates, bus_protocol, currDate) -> None:
-    while currDate in bus_protocol.holiday or currDate in holidays.WEEKEND:
+def payment_calc(payment_dates, bus_protocol, currDate) -> None:
+    while currDate in datetime.date(bus_protocol.country_chosen.year,
+                                    bus_protocol.country_chosen.month, bus_protocol.country_chosen.day) or currDate in holidays.WEEKEND:
         if bus_protocol.bus_protocol.rules == "Following Business Day":
             currDate = bus_protocol.next_bus_day(datetime.date(currDate.year, currDate.month, currDate.day))
         elif bus_protocol.rules == "Preceding Business Day":
@@ -106,7 +85,7 @@ def main():
         hday_class[idx] = turn_to_date_class(day)
 
     bus_protocol: BusinessDayRule = updated_protocols.BusinessDayRule(start_date_class, end_date_class,
-                                                                      rules, hday_class, end_of_month_rule)
+                                                                      rules, hday_class, payments, end_of_month_rule)
     cal: Calendar = updated_protocols.Calendar(holidays.WEEKEND, hday_class)
 
 
@@ -116,7 +95,7 @@ def main():
         num_payments = (end_date - start_date).days // 7
         for i in range(num_payments):
             currDate = start_date + pd.DateOffset(weeks=(i + 1))
-            payment_calc(payment_dates, rules, start_date, hday, currDate)
+            payment_calc(payment_dates, bus_protocol, currDate)
 
     elif payments == "Bi-Weekly":
         num_payments = (end_date - start_date).days // 14
