@@ -1,54 +1,164 @@
+import datetime
+from datetime import date
+from typing import Dict, Iterable, Optional, Protocol, Tuple, Union, runtime_checkable
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid
+import holidays
+import updated_protocols
+from updated_protocols import Calendar, BusinessDayRule
+
+
+def turn_to_date_class(date_input) -> updated_protocols.Date:
+    return updated_protocols.Date(date_input.day, date_input.month, date_input.year)
+
+
+def holiday_selection(selected: str) -> Dict:
+    if selected == "New York Stock Exchange":
+        holiday = holidays.NYSE()
+    elif selected == "European Central Bank":
+        holiday = holidays.ECB()
+    elif selected == "China":
+        holiday = holidays.CN()
+    elif selected == "Brazil":
+        holiday = holidays.BR()
+    elif selected == "Australia":
+        holiday = holidays.AUS()
+    elif selected == "Nigeria":
+        holiday = holidays.NG()
+    return holiday
+
+
+def payment_calc(payment_dates, rules, start_date, hday, currDate) -> None:
+    while currDate in hday or currDate in holidays.WEEKEND:
+        if rules == "Following Business Day":
+            currDate = currDate + pd.DateOffset(days=1)
+        elif rules == "Preceding Business Day":
+            currDate = currDate - pd.DateOffset(days=1)
+        elif rules == "Modified Following Business Day":
+            ##we cant pass into the next month. if we do, revert to last business day of the previous month
+            if currDate.month != (currDate + pd.DateOffset(days=1)).month:
+                currDate = currDate - pd.DateOffset(days=1)
+            else:
+                currDate = currDate + pd.DateOffset(days=1)
+        elif rules == "Modified Preceding Business Day":
+            # we cant pass into the previous month. if we do, revert to first business day of the next month
+            if currDate.month != (currDate - pd.DateOffset(days=1)).month:
+                currDate = currDate + pd.DateOffset(days=1)
+            else:
+                currDate = currDate - pd.DateOffset(days=1)
+        payment_dates.append(currDate)
+
+
+def payment_calc_edited(payment_dates, bus_protocol, currDate) -> None:
+    while currDate in bus_protocol.holiday or currDate in holidays.WEEKEND:
+        if bus_protocol.bus_protocol.rules == "Following Business Day":
+            currDate = bus_protocol.next_bus_day(datetime.date(currDate.year, currDate.month, currDate.day))
+        elif bus_protocol.rules == "Preceding Business Day":
+            currDate = bus_protocol.prev_bus_day(datetime.date(currDate.year, currDate.month, currDate.day))
+        elif bus_protocol.rules == "Modified Following Business Day":
+            # we can't pass into the next month
+            # if we do, revert to last business day of the previous month
+            currDate = bus_protocol.next_bus_day_modded(datetime.date(currDate.year, currDate.month, currDate.day))
+        elif bus_protocol.rules == "Modified Preceding Business Day":
+            # we can't pass into the previous month. if we do, revert to first business day of the next month
+            currDate = bus_protocol.prev_bus_day_modded(datetime.date(currDate.year, currDate.month, currDate.day))
+        payment_dates.append(currDate)
+
 
 def main():
     st.sidebar.image("./images/msci.png")
     st.sidebar.image("./images/gcoeou.png")
     st.title("Liquid Thunder's Payment Scheduler")
 
-
-    payments = st.sidebar.selectbox("Select the payment schedule", ["Weekly", "Bi-Weekly", "Monthly", "Bi-Monthly", "Quarterly", "Semi-Annually", "Annually"])
+    end_of_month_rule = False
+    payments = st.sidebar.selectbox("Select the payment schedule",
+                                    ["Weekly", "Bi-Weekly", "Monthly", "Bi-Monthly", "Quarterly", "Semi-Annually",
+                                     "Annually"])
     ##desired action is to send response to protocols.py file and have it configure the correct frequency internally
-    holiday_select = st.sidebar.selectbox("Select the holiday calendar", ["New York Stock Exchange", "European Central Bank"])
+    holiday_select = st.sidebar.selectbox("Select the holiday calendar",
+                                          ["New York Stock Exchange", "European Central Bank"])
+    hday = holiday_selection(holiday_select)
+
     ##desired action is to send response to protocols.py file and have it pull up the correct holiday calendar internally
-    rules = st.sidebar.selectbox("Select the payment rule", ["Following Business Day", "Preceding Business Day", "Modified Following Business Day", "Modified Preceding Business Day"])
+    rules = st.sidebar.selectbox("Select the payment rule",
+                                 ["Following Business Day", "Preceding Business Day", "Modified Following Business Day",
+                                  "Modified Preceding Business Day"])
     ##desired action is to send response to protocols.py file and have it configure the correct payment rule internally
-    if(payments == "Monthly" or payments == "Bi-Monthly"):
-        end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=True)
-        ##desired action is to send response to protocols.py file and have it configure the correct end of month rule internally
+
+    if payments == "Monthly" or payments == "Bi-Monthly":
+        end_of_month_rule = st.sidebar.checkbox("End of Month Rule",
+                                                value=False)  ## needs to appear more (quarterly,etc)
+    # desired action is to send response to protocols.py file and have it configure the correct end of month rule
+    # internally
     start_date = st.date_input("Start Date")
     ##desired action is to send response to protocols.py file and have it configure the correct start date internally
     end_date = st.date_input("End Date", min_value=start_date, value=start_date)
+
     ##desired action is to send response to protocols.py file and have it configure the correct end date internally
 
+    start_date_class = turn_to_date_class(start_date)
+    end_date_class = turn_to_date_class(end_date)
+
+    day: datetime.date
+    hday_class: Dict
+    for day, idx in hday:
+        hday_class[idx] = turn_to_date_class(day)
+
+    bus_protocol: BusinessDayRule = updated_protocols.BusinessDayRule(start_date_class, end_date_class,
+                                                                      rules, hday_class, end_of_month_rule)
+    cal: Calendar = updated_protocols.Calendar(holidays.WEEKEND, hday_class)
+
+
     # SEND TO PROTOCOL FOR COMPUTATION
+    payment_dates = []
     if payments == "Weekly":
         num_payments = (end_date - start_date).days // 7
-        payment_dates = [start_date + pd.DateOffset(weeks=(i+1)) for i in range(num_payments)]
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(weeks=(i + 1))
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
+
     elif payments == "Bi-Weekly":
         num_payments = (end_date - start_date).days // 14
-        payment_dates = [start_date + pd.DateOffset(weeks=(i+1)*2) for i in range(num_payments)]
-    elif payments == "Monthly":
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(weeks=(i + 1) * 2)
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
+
+    elif payments == "Monthly":  ##END OF MONTH RULE NEEDS TO BE IMPLEMENTED
         num_payments = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
-        payment_dates = [start_date + pd.DateOffset(months=i+1) for i in range(num_payments)]
-    elif payments == "Bi-Monthly":
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(months=i + 1)
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
+
+    elif payments == "Bi-Monthly":  ##END OF MONTH RULE NEEDS TO BE IMPLEMENTED
         num_payments = (end_date.year - start_date.year) * 6 + (end_date.month - start_date.month) // 2
-        payment_dates = [start_date + pd.DateOffset(months=(i+1)*2) for i in range(num_payments)]
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(months=(i + 1) * 2)
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
+
     elif payments == "Quarterly":
         num_payments = (end_date.year - start_date.year) * 4 + (end_date.month - start_date.month) // 3
-        payment_dates = [start_date + pd.DateOffset(months=(i+1)*3) for i in range(num_payments)]
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(months=(i + 1) * 3)
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
+
     elif payments == "Semi-Annually":
         num_payments = (end_date.year - start_date.year) * 2 + (end_date.month - start_date.month) // 6
-        payment_dates = [start_date + pd.DateOffset(months=(i+1)*6) for i in range(num_payments)]
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(months=(i + 1) * 6)
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
+
     elif payments == "Annually":
         num_payments = end_date.year - start_date.year
-        payment_dates = [start_date + pd.DateOffset(years=(i+1)) for i in range(num_payments)]
+        for i in range(num_payments):
+            currDate = start_date + pd.DateOffset(years=(i + 1))
+            payment_calc(payment_dates, rules, start_date, hday, currDate)
 
     # convert payment_dates to dataframe with month, day, and year columns
     payment_dates = pd.DataFrame({"Month": [date.strftime('%B') for date in payment_dates],
-                                    "Day": [date.day for date in payment_dates],
-                                    "Year": [date.year for date in payment_dates]})
+                                  "Day": [date.day for date in payment_dates],
+                                  "Year": [date.year for date in payment_dates]})
+
 
     # Display the payment schedule with the payment dates and date range
     if num_payments > 0:
@@ -57,13 +167,13 @@ def main():
         st.write("Date Range: ", start_date, " to ", end_date)
         AgGrid(payment_dates, fit_columns_on_grid_load=True)
     else:
-        st.write("No payments in the date range") 
+        st.write("No payments in the date range")
 
-    # Button to download the dataframe as a csv file
+        # Button to download the dataframe as a csv file    payment_dates.append(currDate)
     if st.button("Download Payment Schedule"):
         payment_dates.to_csv("payment_schedule.csv", index=False)
         st.write("Downloaded payment schedule as csv file")
 
+
 if __name__ == "__main__":
     main()
-
