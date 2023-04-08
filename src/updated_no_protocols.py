@@ -6,7 +6,6 @@ from typing import Dict, Iterable, Union
 import holidays
 from jdcal import gcal2jd, is_leap
 
-from updated_proto import Date
 
 class Date:
     """Protocol of Financial Date Class"""
