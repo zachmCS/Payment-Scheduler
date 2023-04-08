@@ -6,8 +6,6 @@ from typing import Dict, Iterable, Protocol, Union, runtime_checkable
 import holidays
 from jdcal import gcal2jd, is_leap
 
-from updated_proto import Date
-
 
 @runtime_checkable
 class Date(Protocol):
