@@ -2,14 +2,16 @@ from copy import deepcopy
 import datetime
 from itertools import chain
 from enum import Enum
-from typing import Dict, Iterable, Tuple, Union, runtime_checkable
+from typing import Dict, Iterable, Protocol, Union, runtime_checkable
 import holidays
 from jdcal import gcal2jd, is_leap
 
+from updated_proto import Date
 
 
-class Date():
-    """ of Financial Date Class"""
+@runtime_checkable
+class Date(Protocol):
+    """Protocol of Financial Date Class"""
 
     def __init__(self, day: int, month: int, year: int) -> None:
         """
@@ -47,7 +49,7 @@ class Date():
     # checks if is the given day is a business day
     def is_bus_day(self, calendar_input: "Calendar") -> bool:
         # need to get bank type from scheduler
-        if not calendar_input.is_holiday(self) and not calendar_input.is_weekend(self):
+        if not calendar_input.is_holiday(self) and not calendar_input.is_holiday(self):
             return True
         return False
 
@@ -64,19 +66,34 @@ class Date():
     def __hash__(self) -> int:
         return hash((self.year, self.month, self.day))
 
-    # TODO: Add implement frequency portion
-    # Can add day, week, month, or year at a given unit
-    # i.e. 1 day, 2 weeks, 3 months at a frequency
-    # i.e. monthly. bimonthly, annually, once
+    # TODO: Currently, dues not add based on frequency
     def __add__(self, other: Union[int, "Frequency", "Term"]) -> "Date":
-        pass
+        if other.unit.name == "day":
+            self.day += other.quantity
+        elif other.unit.name == "week":
+            self.day += 7 * other.quantity
+        elif other.unit.name == "month":
+            self.month += other.quantity
+        elif other.unit == "year":
+            self.year += other.quantity
+        else:
+            raise ValueError("Unit name entered is does not allow the addition to a Date object")
+        return self
 
-    # TODO need to implement frequency portion
-    # Can subtract day, week, month, or year at a given unit
-    # i.e. 1 day, 2 weeks, 3 months at a frequency
-    # i.e. monthly. bimonthly, annually, once
+    # TODO: Currently, dues not subtract based on frequency
     def __sub__(self, other: Union[int, "Frequency", "Term"]) -> "Date":
-        pass
+
+        if other.unit.name == "day":
+            self.day -= other.quantity
+        elif other.unit.name == "week":
+            self.day -= 7 * other.quantity
+        elif other.unit.name == "month":
+            self.month += other.quantity
+        elif other.unit == "year":
+            self.year -= other.quantity
+        else:
+            raise ValueError("Unit name entered is does not allow the addition to a Date object")
+        return self
 
     def __eq__(self, other: "Date") -> bool:
         if isinstance(other, self.__class__):
@@ -104,13 +121,11 @@ class Date():
         return False
 
 
-class BusinessDayRule():
-    """ of Business Day Rule Representation"""
-
-    # TODO: Add implement end of the month rule more directly into the code
+class BusinessDayRule:
+    """Protocol of Business Day Rule Representation"""
 
     def __init__(self, start_date: Date, end_date: Date, rules: str,
-                 country_chosen: holidays, payments: str, end_of_the_month_rule: bool = False) -> None:
+                 country_chosen) -> None:
         """
             Initializes a self with a start_date, end_date, rules for the business option
             selected, and the country chosen for the bank holidays
@@ -122,18 +137,7 @@ class BusinessDayRule():
         self.start_date = start_date
         self.end_date = end_date
         self.rules = rules
-        self.payments = payments
         self.country_chosen = country_chosen
-        self.end_of_the_month_rule = end_of_the_month_rule
-
-    # updates end of the month rule
-    def update_month_rule(self, rule_value: bool):
-        self.end_of_the_month_rule = rule_value
-
-    # updates payment specification
-    def update_payment (self, new_payment: str):
-        self.payments = new_payment
-
 
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the next business day if it is a weekend or holiday
@@ -154,14 +158,13 @@ class BusinessDayRule():
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the next business day if
     # it is a weekend or holiday stopping at the last day of the month
-    # Note ask about circumfiting infinte loops (or going into the next month using Marcos method)
     def next_bus_day_modded(self, given_date: Date) -> datetime.date:
         given = given_date.as_date()
         while given.weekday() in holidays.WEEKEND or given in self.country_chosen:
             if (given - datetime.timedelta(days=1)).month != given.month:
                 given += datetime.timedelta(days=1)
             else:
-               given -= datetime.timedelta(days=1)
+                given -= datetime.timedelta(days=1)
         return given
 
     # after calculating what exact day a payment should fall on, this function will
@@ -173,13 +176,43 @@ class BusinessDayRule():
             if (given - datetime.timedelta(days=1)).month == given.month:
                 given -= datetime.timedelta(days=1)
             else:
-                given+= datetime.timedelta(days=1)
+                given += datetime.timedelta(days=1)
         return given
 
+    def end_of_month_calc_day(self, input_date: datetime.date, ) -> datetime.date:
+        if self.rules == 'Weekly' or self.rules == 'Bi-Weekly':
+            raise ValueError("Weekly and Bi-Weekly payments can not abide by the end of month rule")
+        else:
+            if input_date.month == 12:
+                end_month = input_date.replace(day=31)
+            else:
+                end_month = input_date.replace(month=input_date.month + 1, day=1) - datetime.timedelta(days=1)
+        if self.rules == 'Modified Preceding Business Day':
+            return self.prev_bus_day_modded(Date(end_month.day, end_month.month, end_month.year))
+        elif self.rules == 'Modified Following Business Day':
+            return self.next_bus_day_modded(Date(end_month.day, end_month.month, end_month.year))
+        else:
+            return end_month
+
+    def num_payments_cal(self) -> int:
+        if self.rules == "Weekly":
+            return (self.end_date.day - self.start_date.day) // 7
+        elif self.rules == "Bi-Weekly":
+            return (self.end_date.day - self.start_date.day) // 14
+        elif self.rules == "Monthly":
+            return (self.end_date.year - self.start_date.year) * 12 + (self.end_date.month - self.start_date.month)
+        elif self.rules == "Bi-Monthly":
+            return (self.end_date.year - self.start_date.year) * 6 + (self.end_date.month - self.start_date.month) // 2
+        elif self.rules == "Quarterly":
+            return (self.end_date.year - self.start_date.year) * 4 + (self.end_date.month - self.start_date.month) // 3
+        elif self.rules == "Semi-Annually":
+            return (self.end_date.year - self.start_date.year) * 2 + (self.end_date.month - self.start_date.month) // 6
+        elif self.rules == "Annually":
+            return self.end_date.year - self.start_date.year
 
 
-class Frequency():
-    """ of Frequency Representation"""
+class Frequency:
+    """Protocol of Frequency Representation"""
 
     name: str
     term: "Term"
@@ -197,8 +230,8 @@ class DayOfTheWeek(Enum):
     MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
 
 
-class Calendar():
-    """ of Financial Calendar class"""
+class Calendar:
+    """Protocol of Financial Calendar class"""
 
     def __init__(
             self,
@@ -258,7 +291,8 @@ class Calendar():
                 return True
         else:
             return True
-    # TODO
+
+    # TODO: Verify correct setup with Gabriel
     def bus_to_cal_day(
             self,
             date_input: Date,
@@ -267,7 +301,13 @@ class Calendar():
             ignore_weekend: bool,
             ignore_holidays: bool,
     ) -> "Term":
-       pass
+        if self.is_bus_day(date_input,
+                           ignore_weekend, ignore_holidays):
+            leniency = False
+        else:
+            leniency = True
+
+        return Term(term_input.quantity, term_input.unit, leniency)
 
     def business_days_between(
             self,
@@ -276,6 +316,7 @@ class Calendar():
             ignore_weekend: bool,
             ignore_holidays: bool,
     ) -> int:
+
         dates = (start_date.as_date() + datetime.timedelta(day + 1)
                  for day in range((end_date.as_date() - start_date.as_date()).days))
         res = sum(1 for day_input in dates if self.is_bus_day(Date(day_input.day, day_input.month, day_input.year),
@@ -283,8 +324,8 @@ class Calendar():
         return res
 
 
-class TermUnit():
-    """ of Term Unit Representation"""
+class TermUnit:
+    """Protocol of Term Unit Representation"""
 
     name: str
     code: str
@@ -293,8 +334,8 @@ class TermUnit():
         return f'(Name: {self.name}, Code: {self.code})'
 
 
-
-class Term():
+@runtime_checkable
+class Term:
     """Financial Term Class"""
     quantity: int
     unit: TermUnit
@@ -311,10 +352,10 @@ class Term():
         self.unit = unit
         self.lenient = lenient
 
-    # TODO what is this?
     @classmethod
     def from_str(cls, string: str, lenient: bool = False) -> "Term":
-        pass
+        quantity, unit = string.split(", ")
+        return Term(quantity, unit, lenient)
 
     def __str__(self) -> str:
         return f'(Quantity: {self.quantity}, Term: {self.unit}, Leniency: {self.lenient})'
@@ -330,14 +371,13 @@ class Term():
     def __hash__(self) -> int:
         return hash((self.quantity, self.unit.name, self.unit.code, self.lenient))
 
-    # TODO Same problem with Date where two units can have different weights
-    # Currently, only works if two units are the same (conversion maybe needed)
+    # TODO: Currently, only works if two units are the same (conversion maybe needed)
     def __add__(self, other: "Term") -> "Term":
         if isinstance(other, self.__class__):
             if self.unit == other.unit and self.lenient == other.lenient:
                 sum_term = Term(self.quantity + other.quantity, self.unit, self.lenient)
                 return sum_term
-
+    # TODO: Currently, only works if two units are the same (conversion maybe needed)
     def __sub__(self, other: "Term") -> "Term":
         if self.unit == other.unit and self.lenient == other.lenient:
             sub_term = Term(self.quantity - other.quantity, self.unit, self.lenient)
@@ -363,8 +403,7 @@ class Term():
         if isinstance(other, self.__class__):
             return self.quantity == other.quantity and self.unit == other.unit and self.lenient == other.lenient
 
-    # TODO Same problem as Data where units can change
-    # Currently, only works if two units are the same (conversion maybe needed)
+    # TODO: Currently, only works if two units are the same (conversion maybe needed)
     def __gt__(self, other: "Term") -> bool:
         if isinstance(other, self.__class__):
             if self.unit == other.unit and self.lenient == other.lenient:
