@@ -377,6 +377,7 @@ class Term:
             if self.unit == other.unit and self.lenient == other.lenient:
                 sum_term = Term(self.quantity + other.quantity, self.unit, self.lenient)
                 return sum_term
+
     # TODO: Currently, only works if two units are the same (conversion maybe needed)
     def __sub__(self, other: "Term") -> "Term":
         if self.unit == other.unit and self.lenient == other.lenient:
