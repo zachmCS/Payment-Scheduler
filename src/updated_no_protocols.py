@@ -2,11 +2,13 @@ from copy import deepcopy
 import datetime
 from itertools import chain
 from enum import Enum
-from typing import Dict, Iterable, Union
+from typing import Dict, Iterable, Protocol, Union, runtime_checkable
 import holidays
 from jdcal import gcal2jd, is_leap
+from dateutil.relativedelta import relativedelta
 
 
+@runtime_checkable
 class Date:
     """Protocol of Financial Date Class"""
 
@@ -65,32 +67,33 @@ class Date:
 
     # TODO: Currently, dues not add based on frequency
     def __add__(self, other: Union[int, "Frequency", "Term"]) -> "Date":
+        new_self = deepcopy(self).as_date()
         if other.unit.name == "day":
-            self.day += other.quantity
+            new_self += datetime.timedelta(days=other.quantity)
         elif other.unit.name == "week":
-            self.day += 7 * other.quantity
+            new_self += datetime.timedelta(days=7 * other.quantity)
         elif other.unit.name == "month":
-            self.month += other.quantity
+            new_self += relativedelta(months=other.quantity)
         elif other.unit == "year":
-            self.year += other.quantity
+            new_self += relativedelta(years=other.quantity)
         else:
             raise ValueError("Unit name entered is does not allow the addition to a Date object")
-        return self
+        return Date(new_self.day, new_self.month, new_self.year)
 
     # TODO: Currently, dues not subtract based on frequency
     def __sub__(self, other: Union[int, "Frequency", "Term"]) -> "Date":
-
+        new_self = deepcopy(self).as_date()
         if other.unit.name == "day":
-            self.day -= other.quantity
+            new_self -= datetime.timedelta(days=other.quantity)
         elif other.unit.name == "week":
-            self.day -= 7 * other.quantity
+            new_self -= datetime.timedelta(days=7*other.quantity)
         elif other.unit.name == "month":
-            self.month += other.quantity
+            new_self -= relativedelta(months=other.quantity)
         elif other.unit == "year":
-            self.year -= other.quantity
+            new_self -= relativedelta(years=other.quantity)
         else:
             raise ValueError("Unit name entered is does not allow the addition to a Date object")
-        return self
+        return Date(new_self.day,new_self.month,new_self.year)
 
     def __eq__(self, other: "Date") -> bool:
         if isinstance(other, self.__class__):
@@ -331,6 +334,7 @@ class TermUnit:
         return f'(Name: {self.name}, Code: {self.code})'
 
 
+@runtime_checkable
 class Term:
     """Financial Term Class"""
     quantity: int
