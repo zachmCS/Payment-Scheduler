@@ -69,13 +69,13 @@ class Date(Protocol):
     def __add__(self, other: Union[int, "Frequency", "Term"]) -> "Date":
         new_self = deepcopy(self).as_date()
         if other.unit.name == "day":
-            new_self += datetime.timedelta(days=+other.quantity)
+            new_self += datetime.timedelta(days=other.quantity)
         elif other.unit.name == "week":
-            new_self += datetime.timedelta(days=+7 * other.quantity)
+            new_self += datetime.timedelta(weeks=other.quantity)
         elif other.unit.name == "month":
-            new_self += relativedelta(months=+other.quantity)
+            new_self += relativedelta(months=other.quantity)
         elif other.unit == "year":
-            new_self += relativedelta(years=+other.quantity)
+            new_self += relativedelta(years=other.quantity)
         else:
             raise ValueError("Unit name entered is does not allow the addition to a Date object")
         return Date(new_self.day, new_self.month, new_self.year)
@@ -84,13 +84,13 @@ class Date(Protocol):
     def __sub__(self, other: Union[int, "Frequency", "Term"]) -> "Date":
         new_self = deepcopy(self).as_date()
         if other.unit.name == "day":
-            new_self -= datetime.timedelta(days=-other.quantity)
+            new_self -= datetime.timedelta(days=other.quantity)
         elif other.unit.name == "week":
-            new_self -= datetime.timedelta(days=-7*other.quantity)
+            new_self -= datetime.timedelta(weeks=other.quantity)
         elif other.unit.name == "month":
-            new_self -= relativedelta(months=-other.quantity)
+            new_self -= relativedelta(months=other.quantity)
         elif other.unit == "year":
-            new_self -= relativedelta(years=-other.quantity)
+            new_self -= relativedelta(years=other.quantity)
         else:
             raise ValueError("Unit name entered is does not allow the addition to a Date object")
         return Date(new_self.day,new_self.month,new_self.year)
