@@ -8,7 +8,6 @@ from jdcal import gcal2jd, is_leap
 from dateutil.relativedelta import relativedelta
 
 
-@runtime_checkable
 class Date:
     """Protocol of Financial Date Class"""
 
@@ -86,14 +85,14 @@ class Date:
         if other.unit.name == "day":
             new_self -= datetime.timedelta(days=-other.quantity)
         elif other.unit.name == "week":
-            new_self -= datetime.timedelta(days=-7*other.quantity)
+            new_self -= datetime.timedelta(days=-7 * other.quantity)
         elif other.unit.name == "month":
             new_self -= relativedelta(months=-other.quantity)
         elif other.unit == "year":
             new_self -= relativedelta(years=-other.quantity)
         else:
             raise ValueError("Unit name entered is does not allow the addition to a Date object")
-        return Date(new_self.day,new_self.month,new_self.year)
+        return Date(new_self.day, new_self.month, new_self.year)
 
     def __eq__(self, other: "Date") -> bool:
         if isinstance(other, self.__class__):
