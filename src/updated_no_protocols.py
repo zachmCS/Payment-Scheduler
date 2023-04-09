@@ -70,7 +70,7 @@ class Date:
         if other.unit.name == "day":
             new_self += datetime.timedelta(days=other.quantity)
         elif other.unit.name == "week":
-            new_self += datetime.timedelta(weeks= other.quantity)
+            new_self += datetime.timedelta(weeks=other.quantity)
         elif other.unit.name == "month":
             new_self += relativedelta(months=other.quantity)
         elif other.unit == "year":
@@ -85,7 +85,7 @@ class Date:
         if other.unit.name == "day":
             new_self -= datetime.timedelta(days=other.quantity)
         elif other.unit.name == "week":
-            new_self -= datetime.timedelta(weeks= other.quantity)
+            new_self -= datetime.timedelta(weeks=other.quantity)
         elif other.unit.name == "month":
             new_self -= relativedelta(months=other.quantity)
         elif other.unit == "year":
