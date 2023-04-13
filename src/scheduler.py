@@ -37,7 +37,7 @@ def main():
 
     end_of_month_rule = False
     payments = st.sidebar.selectbox(
-        "Select the payment schedule",
+        "Payment schedule 🔁",
         [
             "Weekly",
             "Bi-Weekly",
@@ -47,9 +47,10 @@ def main():
             "Semi-Annually",
             "Annually",
         ],
+        help='Select the payment schedule. Default is "Weekly".'
     )
     holiday_select = st.sidebar.selectbox(
-        "Select the holiday calendar",
+        "Holiday calendar (🇺🇸, 🇪🇺, 🇨🇳, 🇧🇷, 🇦🇺, 🇳🇬)",
         [
             "New York Stock Exchange",
             "European Central Bank",
@@ -58,23 +59,25 @@ def main():
             "Australia",
             "Nigeria",
         ],
+        help='Select the holiday calendar. Default is "New York Stock Exchange"'
     )
 
     rules = st.sidebar.selectbox(
-        "Select the payment rule",
+        "Payment rule",
         [
             "Following Business Day",
             "Preceding Business Day",
             "Modified Following Business Day",
             "Modified Preceding Business Day",
         ],
+        help='Select the payment rule. Default is "Following Business Day".'
     )
 
     if payments != "Weekly" or payments != "Bi-Weekly":
         end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=False)
 
-    start_date = st.date_input("Start Date")
-    end_date = st.date_input("End Date", min_value=start_date, value=start_date)
+    start_date = st.date_input("Start Date 📅")
+    end_date = st.date_input("End Date 📅", min_value=start_date, value=start_date)
 
     bus_protocol: BusinessDayRule = updated_protocols.BusinessDayRule(
         turn_to_date_class(start_date),
@@ -110,12 +113,14 @@ def main():
     else:
         st.write("No payments in the date range")
 
-    # Button to download the dataframe as a csv file
+    # Convert month to number
     payment_dates["Month"] = payment_dates["Month"].apply(
             lambda x: datetime.datetime.strptime(x, "%B").month
         )
-    # calculate file_name from start_date and end_date
+    # Calculate file_name from start_date and end_date
     file_name = f"payments_{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}.csv"
+
+    # Download button
     st.download_button(
         label="Download data as CSV",
         data=payment_dates.to_csv(index=False),
