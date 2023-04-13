@@ -60,7 +60,7 @@ def main():
 
     # SEND TO PROTOCOL FOR COMPUTATION
     payment_dates = []
-    payment_dates = bus_protocol.next_bus_day(turn_to_date_class(start_date))
+    payment_dates = bus_protocol.calc_payment_dates(turn_to_date_class(start_date))
 
     # convert payment_dates to dataframe with month, day, and year columns
     payment_dates = pd.DataFrame({"Month": [date.strftime('%B') for date in payment_dates],

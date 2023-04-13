@@ -54,8 +54,9 @@ class Date():
 
     # turns the given self date info into actual date object
     def as_date(self) -> datetime:
+        #print(datetime.date(self.year, self.month, self.day))
         return datetime.date(self.year, self.month, self.day)
-
+    
     def __repr__(self) -> str:
         return f'DATE (Month: "{self.month}", Day: "{self.day}", Year: {self.year})'
 
@@ -149,9 +150,9 @@ class BusinessDayRule():
 
     def num_payments_cal(self) -> int:
         if self.rules == "Weekly":
-            return (self.end_date.day - self.start_date.day) // 7
+            return (self.end_date.as_date() - self.start_date.as_date()).days // 7
         elif self.rules == "Bi-Weekly":
-            return (self.end_date.day - self.start_date.day) // 14
+            return (self.end_date.as_date() - self.start_date.as_date()).days // 14
         elif self.rules == "Monthly":
             return (self.end_date.year - self.start_date.year) * 12 + (self.end_date.month - self.start_date.month)
         elif self.rules == "Bi-Monthly":
@@ -165,6 +166,18 @@ class BusinessDayRule():
         
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the next business day if it is a weekend or holiday
+    def calc_payment_dates(self, given_date: Date):
+        returned = []
+        if self.ruleSet == "Following Business Day":
+            returned = self.next_bus_day(given_date)
+        elif self.ruleSet == "Preceding Business Day":
+           returned =  self.prev_bus_day(given_date)
+        elif self.ruleSet == "Modified Following Business Day":
+            returned =  self.next_bus_day_modded(given_date)
+        elif self.ruleSet == "Modified Preceding Business Day":
+            returned = self.prev_bus_day_modded(given_date)
+        return returned
+
     def next_bus_day(self, given_date: Date):
         given = given_date.as_date()
         start = given
@@ -211,7 +224,7 @@ class BusinessDayRule():
                 else:
                     given -= pd.DateOffset(days=1)
             payment_dates.append(given)
-        return given
+        return payment_dates
 
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the previous business day
@@ -225,12 +238,12 @@ class BusinessDayRule():
             cadence_value = BusinessDayRule.cadence_map[self.rules]
             given = start + pd.DateOffset(weeks=cadence_value*(i+1)) if "week" in self.rules.lower() else start + pd.DateOffset(months=cadence_value*(i+1))
             while given in holidays.WEEKEND or given in self.country_chosen:
-                if (given - datetime.timedelta(days=1)).month == given.month:
+                if (given - pd.DateOffset(days=1)).month == given.month:
                     given -= pd.DateOffset(days=1)
                 else:
                     given += pd.DateOffset(days=1)
             payment_dates.append(given)
-        return given
+        return payment_dates
 
 
 
