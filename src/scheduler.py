@@ -79,6 +79,8 @@ def main():
 
         # Button to download the dataframe as a csv file    payment_dates.append(currDate)
     if st.button("Download Payment Schedule"):
+        # Convert the month column to be the month number instead of the month name
+        payment_dates["Month"] = payment_dates["Month"].apply(lambda x: datetime.datetime.strptime(x, "%B").month)
         payment_dates.to_csv("payment_schedule.csv", index=False)
         st.write("Downloaded payment schedule as csv file")
 
