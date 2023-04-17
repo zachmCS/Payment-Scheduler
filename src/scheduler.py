@@ -37,7 +37,7 @@ def main():
 
     end_of_month_rule = False
     payments = st.sidebar.selectbox(
-        "Payment schedule 🔁",
+        "Payment Schedule 🔁",
         [
             "Weekly",
             "Bi-Weekly",
@@ -46,11 +46,40 @@ def main():
             "Quarterly",
             "Semi-Annually",
             "Annually",
+            "Custom",
         ],
-        help='Select the payment schedule. Default is "Weekly".'
+        help='Select the payment schedule. Default is "Weekly".',
     )
+
+    if payments == "Custom":
+        # Map each custom payment to the max frequency
+        frequency_mappings = {
+            "Days": 365,
+            "Weeks": 52,
+            "Months": 12,
+            "Years": 50,
+        }
+        cols = st.sidebar.columns(2)
+        custom_payments = cols[0].selectbox( 
+            "Unit of Time",
+            [
+                "Days",
+                "Weeks",
+                "Months",
+                "Years",
+            ],
+            help="Select the unit of time for the custom payment range.",
+        )
+
+        custom_frequency = cols[1].number_input(
+            "Frequency",
+            min_value=1,  # 1 day, 1 week, 1 month, etc, 1 is the shortest frequency
+            max_value=frequency_mappings[custom_payments],
+            value=1,
+            help="Enter the frequency of the custom payment schedule.",
+        )
     holiday_select = st.sidebar.selectbox(
-        "Holiday calendar (🇺🇸, 🇪🇺, 🇨🇳, 🇧🇷, 🇦🇺, 🇳🇬)",
+        "Holiday Calendar (🇺🇸, 🇪🇺, 🇨🇳, 🇧🇷, 🇦🇺, 🇳🇬)",
         [
             "New York Stock Exchange",
             "European Central Bank",
@@ -59,22 +88,29 @@ def main():
             "Australia",
             "Nigeria",
         ],
-        help='Select the holiday calendar. Default is "New York Stock Exchange"'
+        help='Select the holiday calendar. Default is "New York Stock Exchange"',
     )
 
-    rules = st.sidebar.selectbox(
-        "Payment rule",
+    rules = st.sidebar.selectbox( # TODO no adjustment is purely calculating the date without any rules
+        "Payment Rule",
         [
+            "No Adjustment",
             "Following Business Day",
             "Preceding Business Day",
             "Modified Following Business Day",
             "Modified Preceding Business Day",
         ],
-        help='Select the payment rule. Default is "Following Business Day".'
+        help='Select the payment rule. Default is "No Adjustment".',
     )
 
     if payments != "Weekly" or payments != "Bi-Weekly":
         end_of_month_rule = st.sidebar.checkbox("End of Month Rule", value=False)
+
+        # Max frequency for each is the amount of times it happens before the next frequency
+        # For example, Days min value is 1 and max value is 365
+        # Weeks min value is 1 and max value is 52
+        # Months min value is 1 and max value is 12
+        # Years min value is 1 and max value is 50
 
     start_date = st.date_input("Start Date 📅")
     end_date = st.date_input("End Date 📅", min_value=start_date, value=start_date)
@@ -115,8 +151,8 @@ def main():
 
     # Convert month to number
     payment_dates["Month"] = payment_dates["Month"].apply(
-            lambda x: datetime.datetime.strptime(x, "%B").month
-        )
+        lambda x: datetime.datetime.strptime(x, "%B").month
+    )
     # Calculate file_name from start_date and end_date
     file_name = f"payments_{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}.csv"
 
@@ -125,7 +161,7 @@ def main():
         label="Download data as CSV",
         data=payment_dates.to_csv(index=False),
         file_name=file_name,
-        mime='text/csv',
+        mime="text/csv",
     )
 
 
