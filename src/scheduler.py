@@ -54,30 +54,33 @@ def main():
     if payments == "Custom":
         # Map each custom payment to the max frequency
         frequency_mappings = {
-            "Days": 365,
-            "Weeks": 52,
-            "Months": 12,
-            "Years": 50,
+            "Day(s)": 365,
+            "Week(s)": 52,
+            "Month(s)": 12,
+            "Year(s)": 50,
         }
         cols = st.sidebar.columns(2)
-        custom_payments = cols[0].selectbox( 
+
+        custom_payments = cols[1].selectbox(
             "Unit of Time",
             [
-                "Days",
-                "Weeks",
-                "Months",
-                "Years",
+                "Day(s)",
+                "Week(s)",
+                "Month(s)",
+                "Year(s)",
             ],
             help="Select the unit of time for the custom payment range.",
         )
-
-        custom_frequency = cols[1].number_input(
-            "Frequency",
+        custom_frequency = cols[0].number_input(
+            "Value",
             min_value=1,  # 1 day, 1 week, 1 month, etc, 1 is the shortest frequency
             max_value=frequency_mappings[custom_payments],
             value=1,
             help="Enter the frequency of the custom payment schedule.",
         )
+
+        
+
     holiday_select = st.sidebar.selectbox(
         "Holiday Calendar (🇺🇸, 🇪🇺, 🇨🇳, 🇧🇷, 🇦🇺, 🇳🇬)",
         [
@@ -91,7 +94,7 @@ def main():
         help='Select the holiday calendar. Default is "New York Stock Exchange"',
     )
 
-    rules = st.sidebar.selectbox( # TODO no adjustment is purely calculating the date without any rules
+    rules = st.sidebar.selectbox(  # TODO no adjustment is purely calculating the date without any rules
         "Payment Rule",
         [
             "No Adjustment",
