@@ -78,6 +78,9 @@ def main():
             value=1,
             help="Enter the frequency of the custom payment schedule.",
         )
+    else:
+        custom_payments = None
+        custom_frequency = None
 
         
 
@@ -125,6 +128,8 @@ def main():
         rules,
         holiday_selection(holiday_select),
         end_of_month_rule,
+        custom_val=custom_frequency,
+        custom_freq=custom_payments
     )
     cal: Calendar = updated_protocols.Calendar(
         holidays.WEEKEND, holiday_selection(holiday_select)
@@ -149,23 +154,24 @@ def main():
         st.write("Number of Payments: ", len(payment_dates))
         st.write("Date Range: ", start_date, " to ", end_date)
         AgGrid(payment_dates, fit_columns_on_grid_load=True)
+
+        # Convert month to number
+        payment_dates["Month"] = payment_dates["Month"].apply(
+            lambda x: datetime.datetime.strptime(x, "%B").month
+        )
+        # Calculate file_name from start_date and end_date
+        file_name = f"payments_{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}.csv"
+
+        # Download button
+        st.download_button(
+            label="Download data as CSV",
+            data=payment_dates.to_csv(index=False),
+            file_name=file_name,
+            mime="text/csv",
+        )
     else:
         st.write("No payments in the date range")
 
-    # Convert month to number
-    payment_dates["Month"] = payment_dates["Month"].apply(
-        lambda x: datetime.datetime.strptime(x, "%B").month
-    )
-    # Calculate file_name from start_date and end_date
-    file_name = f"payments_{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}.csv"
-
-    # Download button
-    st.download_button(
-        label="Download data as CSV",
-        data=payment_dates.to_csv(index=False),
-        file_name=file_name,
-        mime="text/csv",
-    )
 
 
 if __name__ == "__main__":
