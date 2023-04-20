@@ -117,7 +117,7 @@ class BusinessDayRule():
     # TODO: Add implement end of the month rule more directly into the code
 
     def __init__(self, start_date: Date, end_date: Date, rules: str, ruleSet: str,
-                 country_chosen, end_of_month_rule) -> None:
+                 country_chosen, end_of_month_rule, custom_val, custom_freq) -> None:
         """
             Initializes a self with a start_date, end_date, rules for the business option
             selected, and the country chosen for the bank holidays
@@ -132,6 +132,8 @@ class BusinessDayRule():
         self.ruleSet = ruleSet  # NOTE: This is the rule set that is used to determine the business day
         self.country_chosen = country_chosen
         self.end_of_the_month_rule = end_of_month_rule
+        self.custom_frequency = custom_freq
+        self.custom_payments = custom_val
 
     # updates end of the month rule
     def update_month_rule(self, rule_value: bool):
@@ -238,7 +240,8 @@ class BusinessDayRule():
                 if (given + pd.DateOffset(days=1)).month == given.month:
                     given += pd.DateOffset(days=1)
                 else:
-                    given -= pd.DateOffset(days=1)
+                    while given.weekday() > 4 or given in self.country_chosen:
+                        given -= pd.DateOffset(days=1)
             payment_dates.append(given)
         return payment_dates
 
@@ -261,7 +264,8 @@ class BusinessDayRule():
                 if (given - pd.DateOffset(days=1)).month == given.month:
                     given -= pd.DateOffset(days=1)
                 else:
-                    given += pd.DateOffset(days=1)
+                    while given.weekday() > 4 or given in self.country_chosen:
+                        given += pd.DateOffset(days=1)
             payment_dates.append(given)
         return payment_dates
 
