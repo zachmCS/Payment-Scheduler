@@ -304,6 +304,8 @@ class BusinessDayRule():
                 days=cadence_value * (i + 1)) if "day" in self.rules.lower() else start + pd.DateOffset(
                 weeks=cadence_value * (i + 1)) if "week" in self.rules.lower() else start + pd.DateOffset(
                 months=cadence_value * (i + 1))
+            if self.end_of_the_month_rule and (given_date.as_date() == to_last_day(given_date.as_date())):
+                given = to_last_day(given)
             payment_dates.append(given)
         return payment_dates
 
