@@ -117,7 +117,7 @@ class BusinessDayRule():
     # TODO: Add implement end of the month rule more directly into the code
 
     def __init__(self, start_date: Date, end_date: Date, rules: str, ruleSet: str,
-                 country_chosen, end_of_month_rule, custom_val=0, custom_freq='') -> None:
+                 country_chosen, end_of_month_rule) -> None:
         """
             Initializes a self with a start_date, end_date, rules for the business option
             selected, and the country chosen for the bank holidays
@@ -132,9 +132,6 @@ class BusinessDayRule():
         self.ruleSet = ruleSet  # NOTE: This is the rule set that is used to determine the business day
         self.country_chosen = country_chosen
         self.end_of_the_month_rule = end_of_month_rule
-        self.custom_val = custom_val
-        self.custom_freq = custom_freq
-        
 
     # updates end of the month rule
     def update_month_rule(self, rule_value: bool):
@@ -145,23 +142,14 @@ class BusinessDayRule():
         self.payments = new_payment
 
     cadence_map = {
-        "Days": 1,
         "Weekly": 1,
         "Bi-Weekly": 2,
         "Monthly": 1,
         "Bi-Monthly": 2,
         "Quarterly": 3,
         "Semi-Annually": 6,
-        "Annually": 1,
+        "Annually": 12,
     }
-
-    custom_map = {
-        "Day(s)": 'Days', 
-        "Week(s)": 'Weekly',
-        "Month(s)": 'Monthly',
-        "Year(s)": 'Annually'
-    }
-
 
     def num_payments_cal(self) -> int:
         if self.rules == "Weekly":
@@ -178,19 +166,6 @@ class BusinessDayRule():
             return (self.end_date.year - self.start_date.year) * 2 + (self.end_date.month - self.start_date.month) // 6
         elif self.rules == "Annually":
             return self.end_date.year - self.start_date.year
-        elif self.rules == "Custom":
-            self.rules = self.custom_map[self.custom_freq]
-            if self.custom_freq == 'Day(s)':
-                return (self.end_date.as_date() - self.start_date.as_date()).days // self.custom_val
-            elif self.custom_freq == 'Week(s)':
-                return (self.end_date.as_date() - self.start_date.as_date()).days // (7 * self.custom_val)
-            elif self.custom_freq == 'Month(s)':
-                return (self.end_date.year - self.start_date.year) * 12 + (self.end_date.month - self.start_date.month) // self.custom_val
-            elif self.custom_freq == 'Year(s)':
-                return (self.end_date.year - self.start_date.year) // self.custom_val
-
-            
-        
 
     # after calculating what exact day a payment should fall on, this function will
     # either return that self if it is a business day, or the next business day if it is a weekend or holiday
@@ -204,13 +179,12 @@ class BusinessDayRule():
             returned = self.next_bus_day_modded(given_date)
         elif self.ruleSet == "Modified Preceding Business Day":
             returned = self.prev_bus_day_modded(given_date)
-        elif self.ruleSet == "No Adjustment":
-            returned = self.no_adjustment(given_date)
         return returned
 
     def next_bus_day(self, given_date: Date):
         given = given_date.as_date()
         start = given
+        end_start = deepcopy(given)
         payment_dates = []
         num_payments = self.num_payments_cal()
         for i in range(num_payments):
@@ -218,7 +192,7 @@ class BusinessDayRule():
             given = start + pd.DateOffset(
                 weeks=cadence_value * (i + 1)) if "week" in self.rules.lower() else start + pd.DateOffset(
                 months=cadence_value * (i + 1))
-            if self.end_of_the_month_rule:
+            if self.end_of_the_month_rule and (given_date.as_date() == to_last_day(given_date.as_date())):
                 given = to_last_day(given)
             while given.weekday() > 4 or given in self.country_chosen:
                 given += pd.DateOffset(days=1)
@@ -237,7 +211,7 @@ class BusinessDayRule():
             given = start + pd.DateOffset(
                 weeks=cadence_value * (i + 1)) if "week" in self.rules.lower() else start + pd.DateOffset(
                 months=cadence_value * (i + 1))
-            if self.end_of_the_month_rule:
+            if self.end_of_the_month_rule and (given_date.as_date() == to_last_day(given_date.as_date())):
                 given = to_last_day(given)
             while given.weekday() > 4 or given in self.country_chosen:
                 given -= pd.DateOffset(days=1)
@@ -258,7 +232,7 @@ class BusinessDayRule():
             given = start + pd.DateOffset(
                 weeks=cadence_value * (i + 1)) if "week" in self.rules.lower() else start + pd.DateOffset(
                 months=cadence_value * (i + 1))
-            if self.end_of_the_month_rule:
+            if self.end_of_the_month_rule and (given_date.as_date() == to_last_day(given_date.as_date())):
                 given = to_last_day(given)
             while given.weekday() > 4 or given in self.country_chosen:
                 if (given + pd.DateOffset(days=1)).month == given.month:
@@ -281,27 +255,13 @@ class BusinessDayRule():
             given = start + pd.DateOffset(
                 weeks=cadence_value * (i + 1)) if "week" in self.rules.lower() else start + pd.DateOffset(
                 months=cadence_value * (i + 1))
-            if self.end_of_the_month_rule:
+            if self.end_of_the_month_rule and (given_date.as_date() == to_last_day(given_date.as_date())):
                 given = to_last_day(given)
             while given.weekday() > 4 or given in self.country_chosen:
                 if (given - pd.DateOffset(days=1)).month == given.month:
                     given -= pd.DateOffset(days=1)
                 else:
                     given += pd.DateOffset(days=1)
-            payment_dates.append(given)
-        return payment_dates
-    
-    def no_adjustment(self, given_date: Date):
-        given = given_date.as_date()
-        start = given
-        payment_dates = []
-        num_payments = self.num_payments_cal()
-        for i in range(num_payments):
-            cadence_value = BusinessDayRule.cadence_map[self.rules]
-            given = start + pd.DateOffset(
-                days=cadence_value * (i + 1)) if "day" in self.rules.lower() else start + pd.DateOffset(
-                weeks=cadence_value * (i + 1)) if "week" in self.rules.lower() else start + pd.DateOffset(
-                months=cadence_value * (i + 1))
             payment_dates.append(given)
         return payment_dates
 
