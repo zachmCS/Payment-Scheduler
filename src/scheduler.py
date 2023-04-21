@@ -4,11 +4,21 @@ from typing import Dict
 import holidays
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from st_aggrid import AgGrid
+
 
 import updated_protocols
 from updated_protocols import *
 
+
+def ColourWidgetText(wgt_txt, wch_colour = '#000000'):
+    htmlstr = """<script>var elements = window.parent.document.querySelectorAll('*'), i;
+                    for (i = 0; i < elements.length; ++i) { if (elements[i].innerText == |wgt_txt|) 
+                        elements[i].style.color = ' """ + wch_colour + """ '; } </script>  """
+
+    htmlstr = htmlstr.replace('|wgt_txt|', "'" + wgt_txt + "'")
+    components.html(f"{htmlstr}", height=0, width=0)
 
 def turn_to_date_class(date_input) -> updated_protocols.Date:
     return updated_protocols.Date(date_input.day, date_input.month, date_input.year)
@@ -149,10 +159,25 @@ def main():
     )
 
     # Display the payment schedule with the payment dates and date range
+    cols = st.columns(3)
     if len(payment_dates) > 0:
-        st.write("Payment Schedule: ", payments)
-        st.write("Number of Payments: ", len(payment_dates))
-        st.write("Date Range: ", start_date, " to ", end_date)
+        with cols[0]:
+            st.write("Number of Payments: ")
+            st.metric(label="Number of Payments: ", value=len(payment_dates), label_visibility="collapsed") 
+            ColourWidgetText(str(len(payment_dates)), '#00B050')
+
+        with cols[1]:
+            st.write("Start Date: ")
+            st.metric(label="Start Date: ", value=start_date.strftime("%m-%d-%Y"), label_visibility="collapsed")
+            ColourWidgetText(start_date.strftime("%m-%d-%Y"), '#00B050')
+
+        with cols[2]:
+            st.write("End Date: ")
+            st.metric(label="End Date: ", value=end_date.strftime("%m-%d-%Y"), label_visibility="collapsed")
+            ColourWidgetText(end_date.strftime("%m-%d-%Y"), '#00B050')
+        # with cols[3]:
+        #     st.write("Frequency: ")
+        #     st.metric(label="Frequency: ", value=custom_frequency if custom_payments else payments, label_visibility="collapsed")
         AgGrid(payment_dates, fit_columns_on_grid_load=True)
 
         # Convert month to number

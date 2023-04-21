@@ -219,7 +219,9 @@ class BusinessDayRule():
                 given = to_last_day(given)
             while given.weekday() > 4 or given in self.country_chosen:
                 given += pd.DateOffset(days=1)
-            payment_dates.append(given)
+            # If the date does not exist in payment_dates already AND it is within our range, append it
+            if given not in payment_dates and given.date() <= self.end_date.as_date():
+                payment_dates.append(given)
         return payment_dates
 
     # after calculating what exact day a payment should fall on, this function will
@@ -239,7 +241,8 @@ class BusinessDayRule():
                 given = to_last_day(given)
             while given.weekday() > 4 or given in self.country_chosen:
                 given -= pd.DateOffset(days=1)
-            payment_dates.append(given)
+            if given not in payment_dates and given.date() <= self.end_date.as_date():
+                payment_dates.append(given)
         return payment_dates
 
     # after calculating what exact day a payment should fall on, this function will
@@ -265,7 +268,8 @@ class BusinessDayRule():
                 else:
                     while given.weekday() > 4 or given in self.country_chosen:
                         given -= pd.DateOffset(days=1)
-            payment_dates.append(given)
+            if given not in payment_dates and given.date() <= self.end_date.as_date():
+                payment_dates.append(given)
         return payment_dates
 
     # after calculating what exact day a payment should fall on, this function will
@@ -290,7 +294,8 @@ class BusinessDayRule():
                 else:
                     while given.weekday() > 4 or given in self.country_chosen:
                         given += pd.DateOffset(days=1)
-            payment_dates.append(given)
+            if given not in payment_dates and given.date() <= self.end_date.as_date():
+                payment_dates.append(given)
         return payment_dates
     
     def no_adjustment(self, given_date: Date):
@@ -306,7 +311,8 @@ class BusinessDayRule():
                 months=cadence_value * (i + 1))
             if self.end_of_the_month_rule and (given_date.as_date() == to_last_day(given_date.as_date())):
                 given = to_last_day(given)
-            payment_dates.append(given)
+            if given not in payment_dates and given.date() <= self.end_date.as_date():
+                payment_dates.append(given)
         return payment_dates
 
 
