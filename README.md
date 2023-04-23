@@ -55,7 +55,7 @@ Streamlit is an open-source Python library that allows you to create interactive
 
 Once completed, the front-end team worked to make the user interface aesthetically pleasing and ensured that all was working. Thanks to Streamlit, this part of the development process was relatively easy. An image of a working state of the application is shown below:
 
-![Untitled](Capstone%20Final%20Report%20218a5b719bc74326b945f17409acac7b/Untitled.png)
+![Untitled](src/images/Untitled.png)
 
 The application allows the user to select several options. First, the user can select a start date and an end date on the main section of the application. Then the user can access the sidebar to modify several values. The first value, being the payment schedule, tells the back-end how often the user desires a payable date to be calculated. The second value of holiday calendar allows the user to select a region and its corresponding financial holiday calendar. For the purpose of this application, we chose a financial calendar from every inhabited continent: NYSE, ECB, China, Brazil, Australia, and Nigeria. The last drop-down box allows the user to select a payment rule. The payment rule specifies what happens when a payable date falls on the same day as a weekend or holiday. The rules are laid out below:
 
