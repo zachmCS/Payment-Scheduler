@@ -152,7 +152,7 @@ class BusinessDayRule():
         "Bi-Monthly": 2,
         "Quarterly": 3,
         "Semi-Annually": 6,
-        "Annually": 1,
+        "Annually": 12,
     }
 
     custom_map = {
